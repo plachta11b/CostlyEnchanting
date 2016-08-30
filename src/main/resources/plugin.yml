@@ -1,0 +1,11 @@
+name: CostlyEnchanting
+main: cz.plachta11b.costlyenchanting.CostlyEnchanting
+version: '0.0.1'
+database: false
+description: Enchanting cost configuration
+commands:
+   cereload:
+      description: Reloads the config.yml file
+permissions:
+    CostlyEnchanting.reload:
+      description: Allows reloading CostlyEnchanting

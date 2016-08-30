@@ -1,0 +1,10 @@
+# Welcome in CostlyEnchanting config
+
+enchant:
+  # How many percent of levels should plugin take from player
+  cost: 100
+  # Round level by [FLOOR,ROUND,CEIL]
+  round: CEIL
+
+# Enable/Disable debug
+debug: false
