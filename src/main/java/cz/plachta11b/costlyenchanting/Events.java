@@ -1,10 +1,14 @@
 package cz.plachta11b.costlyenchanting;
 
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
 class Events implements Listener
 {
@@ -17,7 +21,7 @@ class Events implements Listener
 
 	// this function is called before enchanting cost taken from player
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-	public void onSignChange(EnchantItemEvent event) {
+	public void EnchantItemEvent(EnchantItemEvent event) {
 
 		Player enchanter = event.getEnchanter();
 
@@ -44,27 +48,70 @@ class Events implements Listener
 		}
 		/* end of hack */
 
+		// look for permission
+		double playerPercentage = getPercentageLevelCost(enchanter);
+
+		boolean takeAllLevels = false;
+
 		String round = this.plugin.config.getRoundMethod();
-		float percentage = this.plugin.config.getPercentageCost();
+		int percentage = this.plugin.config.getPercentageCost();
 		int newEnchantCost = enchantCost;
 
-		if (round.equalsIgnoreCase("floor")) {
-			newEnchantCost = (int) Math.floor(enchantCost * (percentage / 100));
-		} else if (round.equalsIgnoreCase("round")) {
-			newEnchantCost = Math.round(enchantCost * (percentage / 100));
+		if (playerPercentage != Double.POSITIVE_INFINITY) {
+			if (playerPercentage != Double.MAX_VALUE) {
+				percentage = (int) playerPercentage;
+				this.plugin.getLogger().log(Level.INFO, "Configure cost by permission: " + percentage + "%");
+			} else {
+				takeAllLevels = true;
+				this.plugin.getLogger().log(Level.INFO, "Take all levels from player (set by permission)");
+			}
 		} else {
-			newEnchantCost = (int) Math.ceil(enchantCost * (percentage / 100));
+			this.plugin.getLogger().log(Level.INFO, "Player have no permission for cost configuration");
 		}
 
+		if (round.equalsIgnoreCase("floor")) {
+			newEnchantCost = (int) Math.floor(enchantCost * (percentage / 100.0));
+		} else if (round.equalsIgnoreCase("round")) {
+			newEnchantCost = (int) Math.round(enchantCost * (percentage / 100.0));
+		} else {
+			newEnchantCost = (int) Math.ceil(enchantCost * (percentage / 100.0));
+		}
+
+		this.plugin.getLogger().log(Level.INFO, "Player level: " + enchanterLevelBefore + " cost: " + newEnchantCost);
 		int enchanterLevelAfter = enchanterLevelBefore - newEnchantCost;
 
 		// do not set negative levels
-		if ((enchanterLevelAfter + bugCompensationLevel) > 0) {
+		if ((enchanterLevelAfter + bugCompensationLevel) > 0 && takeAllLevels == false) {
 			enchanter.setLevel(enchanterLevelAfter + bugCompensationLevel);
 		} else {
 			enchanter.setLevel(0);
 		}
 
 		enchanter.updateInventory();
+	}
+	
+
+	public double getPercentageLevelCost(Player player) {
+	
+		double minimumPercentageCost = Double.POSITIVE_INFINITY;
+	
+		for (PermissionAttachmentInfo permission: player.getEffectivePermissions()) {
+
+			String permissionString = permission.getPermission();
+
+			if (permissionString.startsWith("costlyenchanting.enchant.cost.")) {
+				String[] value = permissionString.split(Pattern.quote("."));
+
+				if (value[3].equalsIgnoreCase("all")) {
+					minimumPercentageCost = Math.min(minimumPercentageCost, Double.MAX_VALUE);
+				} else {
+					int percentageCostPermission = Integer.parseInt(value[3]);
+
+					minimumPercentageCost = Math.min(percentageCostPermission, minimumPercentageCost);
+				}
+			}
+		}
+
+		return minimumPercentageCost;
 	}
 }
