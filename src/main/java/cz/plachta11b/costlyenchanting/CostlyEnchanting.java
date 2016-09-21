@@ -23,7 +23,13 @@ public class CostlyEnchanting extends JavaPlugin {
 
 		this.getServer().getPluginManager().registerEvents(new Events(this), this);
     }
-    
+
+    public void printMessage(String message, boolean Debug) {
+        if (this.config.isDebuggingAllowed() == true) {
+            this.getLogger().log(Level.INFO, message);
+        }
+    }
+
     public boolean reload() {
 
         if (this.config.reload()) {

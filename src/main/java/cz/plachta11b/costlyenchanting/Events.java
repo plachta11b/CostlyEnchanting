@@ -60,13 +60,13 @@ class Events implements Listener
 		if (playerPercentage != Double.POSITIVE_INFINITY) {
 			if (playerPercentage != Double.MAX_VALUE) {
 				percentage = (int) playerPercentage;
-				this.plugin.getLogger().log(Level.INFO, "Configure cost by permission: " + percentage + "%");
+				this.plugin.printMessage("Configure cost by permission: " + percentage + "%", true);
 			} else {
 				takeAllLevels = true;
-				this.plugin.getLogger().log(Level.INFO, "Take all levels from player (set by permission)");
+				this.plugin.printMessage("Take all levels from player (set by permission)", true);
 			}
 		} else {
-			this.plugin.getLogger().log(Level.INFO, "Player have no permission for cost configuration");
+			this.plugin.printMessage("Player have no permission for cost configuration", true);
 		}
 
 		if (round.equalsIgnoreCase("floor")) {
@@ -77,8 +77,14 @@ class Events implements Listener
 			newEnchantCost = (int) Math.ceil(enchantCost * (percentage / 100.0));
 		}
 
-		this.plugin.getLogger().log(Level.INFO, "Player level: " + enchanterLevelBefore + " cost: " + newEnchantCost);
+		this.plugin.printMessage("Player level: " + enchanterLevelBefore + " cost: " + newEnchantCost, true);
 		int enchanterLevelAfter = enchanterLevelBefore - newEnchantCost;
+
+		if ((enchanterLevelAfter + bugCompensationLevel) < 0) {
+			event.setCancelled(true);
+			enchanter.sendMessage("§4You need: " + newEnchantCost + " levels for this enchant");;
+			return;
+		}
 
 		// do not set negative levels
 		if ((enchanterLevelAfter + bugCompensationLevel) > 0 && takeAllLevels == false) {
